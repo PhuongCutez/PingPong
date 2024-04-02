@@ -1,20 +1,32 @@
 const levels = {
     '1': {
-        'speed': 10
+        'speed': 10,
+        'unDefeatBrick': 0,
+        'mine': 0,
     },
     '2': {
-        'speed': 12
+        'speed': 12,
+        'unDefeatBrick': 0,
+        'mine': 0,
     },
     '3': {
-        'speed': 14
+        'speed': 14,
+        'unDefeatBrick': 0,
+        'mine': 0,
     },
     '4': {
-        'speed': 16
+        'speed': 16,
+        'unDefeatBrick': 0,
+        'mine': 0,
     },
     '5': {
-        'speed': 18
+        'speed': 18,
+        'unDefeatBrick': 4,
+        'mine': 20,
     }
 }
+
+let currentLevel = 1;
 
 const canvas = document.getElementById("canvas");
 const pen = canvas.getContext("2d");
@@ -116,7 +128,7 @@ function resetGame() {
     game.hearts = 3;
     game.requestId = null;
     game.score = 0;
-    // game.level = 1;
+    game.level = currentLevel;
     game.paused = false;
     pause.innerText = "Pause";
     game.startPrizeSwitch = "false";
@@ -522,37 +534,45 @@ function isLevelCompleted() {
     const threshold = checkFinished();
 
     if (threshold) {
-        lootArray.splice(0, lootArray.length);
-
-        brick.brickFinished = true;
-
-        pen.drawImage(image, 0, 0);
-        initNextLevel();
-        // sounds.nextLevel.play();
-        resetBall();
-        resetBoard();
-        resetBricks();
-
-        createBricks();
-        game.timeoutId = setTimeout(() => {
-            loop();
-            sounds.nextLevel.play();
-        }, 3000);
+        if (currentLevel <= 5) {
+            currentLevel++;
+            setLevel(currentLevel);
+        }
 
         return true;
     }
     return false;
 }
 
+function setLevel(level) {
+    lootArray.splice(0, lootArray.length);
+
+    brick.brickFinished = true;
+
+    pen.drawImage(image, 0, 0);
+    currentLevel = level;
+    initLevel(currentLevel);
+    // sounds.nextLevel.play();
+    resetBall();
+    resetBoard();
+    resetBricks();
+
+    createBricks();
+    game.timeoutId = setTimeout(() => {
+        loop();
+        sounds.nexLevel.play();
+    }, 3000);
+}
+
 /**
  * Chuẩn bị cho màn tiếp theo
  */
-function initNextLevel(level) {
-    game.level = parseInt(level);
-    game.speed =
+function initLevel(level) {
+    game.level = level;
+    game.speed = levels[`${level}`].speed;
 
-    game.level++;
-    game.speed++;
+    // game.level++;
+    // game.speed++;
     // bricks = [];
 // hiển thị thông báo cho cấp độ mới
     pen.font = "50px ArcadeClassic";
@@ -641,3 +661,14 @@ function pauseAllSounds() {
     sounds.onLoadSound.currentTime = 0;
     sounds.onLoadSound.pause();
 }
+
+
+// test
+const btnNextLvl = document.querySelector('#choose-level');
+const lvlInput = document.querySelector('#level-input');
+btnNextLvl.addEventListener('click', () => {
+    let level = parseInt(lvlInput.value);
+    setLevel(level);
+    console.log('current level: ',  currentLevel);
+    console.log('speed: ', game.speed);
+})
