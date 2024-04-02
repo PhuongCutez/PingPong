@@ -1,0 +1,35 @@
+body{
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0.3rem;
+    .container{
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+    .btn{
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 5px;
+      &.btn button{
+        border-radius: 20px;
+        margin-left: 5px;
+        width: 150px;
+      }
+      #pause-button {
+        background-color: #deabed;        padding: 0.5rem 1rem;
+        cursor: pointer;
+        font-size: 1.3rem;
+        color: #fff;
+      }
+      #play-button {
+        @extend #pause-button;
+      }
+      #choose-level {
+        @extend  #pause-button;
+      }
+
+    }
+  }
