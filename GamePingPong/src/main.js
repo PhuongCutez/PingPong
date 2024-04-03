@@ -3,27 +3,27 @@ const levels = {
     '1': {
         'speed': 10,
         'unDefeatBrick': 0,
-        'mine': 0,
+        'mineRate': 0,
     },
     '2': {
         'speed': 11,
-        'unDefeatBrick': 1,
-        'mine': 0,
+        'unDefeatBrick': 3,
+        'mineRate': 0,
     },
     '3': {
-        'speed': 12,
-        'unDefeatBrick': 0,
-        'mine': 0,
+        'speed': 6,
+        'unDefeatBrick': 4,
+        'mineRate': 0.25,
     },
     '4': {
         'speed': 13,
-        'unDefeatBrick': 0,
-        'mine': 0,
+        'unDefeatBrick': 5,
+        'mineRate': 0.3,
     },
     '5': {
         'speed': 14,
-        'unDefeatBrick': 4,
-        'mine': 20,
+        'unDefeatBrick': 5,
+        'mineRate': 0.4,
     }
 }
 
@@ -46,7 +46,8 @@ const heartImage = new Image();
 heartImage.src = "images/hearts.png";
 const boardImage = new Image();
 boardImage.src = "images/board.png";
-
+const mineImage = new Image()
+mineImage.src = "images/mine.png";
 //kich thuoc board
 let boardWidth = 90;
 const boardHeight = 15;
@@ -75,7 +76,7 @@ let game = {
     timeoutId: null,
     paused: false,
 
-    startPrizeScore: 100,
+    startPrizeScore: 10,
     startPrizeSwitch: "false",
     incrementPrizeSwitch: "false",
     prizeIncr: 50,
@@ -151,32 +152,42 @@ let bricks = [];
 // status = 2: gạch có thể phá vỡ
 // status = 3: gạch ko thể phá vỡ
 function createBricks() {
+
+    // tao tat ca cach gach la gach so 2
     for (let r = 0; r < brick.row; r++) {
         bricks[r] = [];
         for (let c = 0; c < brick.column; c++) {
-            if (
-                (r == 3 && c == 3) ||
-                (r == 2 && c == 8) ||
-                (r == 1 && c == 2)
-            ) {
-                bricks[r][c] = {
-                    x: c * (brick.offsetLeft + brick.width) + brick.offsetLeft,
-                    y:
-                        r * (brick.offsetTop + brick.height) +
-                        brick.offsetTop +
-                        brick.marginTop,
-                    status: 3,
-                };
-            } else {
-                bricks[r][c] = {
-                    x: c * (brick.offsetLeft + brick.width) + brick.offsetLeft,
-                    y:
-                        r * (brick.offsetTop + brick.height) +
-                        brick.offsetTop + brick.marginTop,
-                    status: 2,
-                };
-            }
+            bricks[r][c] = {
+                x: c * (brick.offsetLeft + brick.width) + brick.offsetLeft,
+                y:
+                    r * (brick.offsetTop + brick.height) +
+                    brick.offsetTop + brick.marginTop,
+                status: 2,
+            };
         }
+    }
+
+    // tao gach khong the pha vo
+    let unDefeatBricks = levels[`${game.level}`].unDefeatBrick;
+
+    // so gach khong the pha vo da tao
+    let createdUnDefeatBricks = 0;
+
+    while (createdUnDefeatBricks <= unDefeatBricks) {
+        // vi tri cua gach khong the pha huy la ngau nhien
+        let c = Math.floor(Math.random() * brick.column);
+        let r = Math.floor(Math.random() * brick.row);
+
+        bricks[r][c] = {
+            x: c * (brick.offsetLeft + brick.width) + brick.offsetLeft,
+            y: r * (brick.offsetTop + brick.height) +
+                brick.offsetTop +
+                brick.marginTop,
+            status: 3,
+        };
+
+        // tang so luong gach khong the pha huy da tao
+        createdUnDefeatBricks++;
     }
 }
 
@@ -213,6 +224,7 @@ function resetBoard() {
     board.x = canvas.width / 2 - boardWidth / 2;
     board.y = canvas.height - boardHeight - boardMarginBottom;
 }
+
 function resetBall() {
     ball.x = canvas.width / 2;
     ball.y = board.y - radiusBall;
@@ -280,10 +292,36 @@ let lootArray = [];
 
 function randomPrize() {
     let prizeOptions = ["heart", "board"];
-    let randomPrize =
-        prizeOptions[Math.floor(Math.random() * prizeOptions.length)];
+
+    let prizeIndex = 0;
+    let randomPrize = '';
+
+    if (game.level >= 3) {
+        prizeOptions.push("mine");
+        let mineRate = levels[`${game.level}`].mineRate;
+
+        prizeIndex = Math.floor(Math.random() * prizeOptions.length + mineRate) > 3 ? 2.99 : Math.floor(Math.random() * prizeOptions.length + mineRate);
+
+        randomPrize =
+            prizeOptions[prizeIndex];
+    } else {
+        prizeIndex = Math.floor(Math.random() * prizeOptions.length);
+
+        randomPrize =
+            prizeOptions[prizeIndex];
+    }
+
+    console.log('random prize: ', randomPrize)
+    console.log('prize options: ', prizeOptions)
 
     return randomPrize;
+    //
+    // 0 1 2
+    // 0 - 0.99
+    // 1 - 1.99
+    // 2 - 2.99
+    //
+    // 3 * 0.67 = 1.82 + 0.25 = 2.07 = 2
 }
 
 //vẽ các phần thưởng
@@ -291,6 +329,9 @@ function drawLoot() {
     lootArray.forEach((obj) => {
         if (obj.prize === "heart") {
             pen.drawImage(heartImage, obj.imageX, obj.imageY, 20, 20);
+        }
+        if (obj.prize == "mine") {
+            pen.drawImage(mineImage, obj.imageX, obj.imageY, 30, 30);
         } else {
             pen.drawImage(boardImage, obj.imageX, obj.imageY, 50, 50);
         }
@@ -382,23 +423,33 @@ function ballBrickCollision() {
         }
     }
 }
+
 //thuong
 function lootBoard() {
     lootArray.forEach((obj) => {
         if (obj.imageY == board.y) {
-            if (obj.prize == "heart") {
-                increaseHarts();
-                lootArray.splice(lootArray.indexOf(obj), 1);
-            } else if (obj.prize == "board") {
-                increaseBoardWidth();
+            if (obj.prize === "heart") {
+                increaseHearts();
                 lootArray.splice(lootArray.indexOf(obj), 1);
             }
+            if (obj.prize === "board") {
+                increaseBoardWidth();
+                lootArray.splice(lootArray.indexOf(obj), 1);
+            } else {
+                // decreaseHearts();
+                // lootArray.splice(lootArray.indexOf(obj), 1);
+            }
+
         }
     });
 }
 
-function increaseHarts() {
+function increaseHearts() {
     game.hearts++;
+}
+
+function decreaseHearts() {
+    game.hearts--;
 }
 
 function increaseBoardWidth() {
@@ -692,6 +743,7 @@ function pauseAllSounds() {
     sounds.onLoadSound.currentTime = 0;
     sounds.onLoadSound.pause();
 }
+
 function updateLocalStorageScore(newScore) {
     let highestScore;
     if (localStorage.getItem("highestScore") === null) {
@@ -705,6 +757,7 @@ function updateLocalStorageScore(newScore) {
     }
     localStorage.setItem("highestScore", JSON.stringify(highestScore));
 }
+
 function getHighestScore() {
     let currentHighestScore;
 
@@ -718,6 +771,7 @@ function getHighestScore() {
     }
     return currentHighestScore;
 }
+
 // test
 const btnNextLvl = document.querySelector('#choose-level');
 const lvlInput = document.querySelector('#level-input');
