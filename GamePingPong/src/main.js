@@ -1,3 +1,4 @@
+//21130488 - Lại Thị Bich Phượng
 const levels = {
     '1': {
         'speed': 10,
@@ -5,28 +6,30 @@ const levels = {
         'mine': 0,
     },
     '2': {
+        'speed': 11,
+        'unDefeatBrick': 1,
+        'mine': 0,
+    },
+    '3': {
         'speed': 12,
         'unDefeatBrick': 0,
         'mine': 0,
     },
-    '3': {
-        'speed': 14,
-        'unDefeatBrick': 0,
-        'mine': 0,
-    },
     '4': {
-        'speed': 16,
+        'speed': 13,
         'unDefeatBrick': 0,
         'mine': 0,
     },
     '5': {
-        'speed': 18,
+        'speed': 14,
         'unDefeatBrick': 4,
         'mine': 20,
     }
 }
 
 let currentLevel = 1;
+let gameOver = false;
+let gameComplete = false;
 
 const canvas = document.getElementById("canvas");
 const pen = canvas.getContext("2d");
@@ -48,7 +51,7 @@ boardImage.src = "images/board.png";
 let boardWidth = 90;
 const boardHeight = 15;
 const boardMarginBottom = 30;
-//audio
+//âm thanh
 const sounds = {
     ballHitBrick: new Audio("sounds/brick.mp3"),
     ballHitBoard: new Audio("sounds/brick.mp3"),
@@ -101,7 +104,7 @@ const ball = {
     y: board.y - radiusBall,
     radius: radiusBall,
     dx: game.speed * (Math.random() * 2 - 1),
-    dy: -game.speed,
+    dy: -game.speed
 };
 
 function onLoadPage(e) {
@@ -134,6 +137,7 @@ function resetGame() {
     game.startPrizeSwitch = "false";
     game.incrementPrizeSwitch = "false";
     game.prizeIncr = 10;
+    gameOver = false;
 }
 
 function resetBricks() {
@@ -209,7 +213,6 @@ function resetBoard() {
     board.x = canvas.width / 2 - boardWidth / 2;
     board.y = canvas.height - boardHeight - boardMarginBottom;
 }
-
 function resetBall() {
     ball.x = canvas.width / 2;
     ball.y = board.y - radiusBall;
@@ -306,7 +309,7 @@ function moveLoot() {
     });
 }
 
-//
+//kiem tra dieu kien co du de nhan thuong khong
 function incrementTrackerSwitch() {
     if (game.score === game.startPrizeScore) {
         return true;
@@ -379,7 +382,7 @@ function ballBrickCollision() {
         }
     }
 }
-
+//thuong
 function lootBoard() {
     lootArray.forEach((obj) => {
         if (obj.imageY == board.y) {
@@ -395,7 +398,6 @@ function lootBoard() {
 }
 
 function increaseHarts() {
-    // increase game.hearts
     game.hearts++;
 }
 
@@ -508,11 +510,13 @@ function isGameOver() {
         pauseAllSounds();
         sounds.gameFinish.play();
         game.speed = 5;
-
         drawLives();
-        gameOver();
-        return true;
+        gameOver = true;
     }
+    if (gameOver)
+        showGameOver();
+    return gameOver;
+
 }
 
 //kiểm tra màn chơi hoàn thành hay chưa
@@ -537,22 +541,31 @@ function isLevelCompleted() {
         if (currentLevel <= 5) {
             currentLevel++;
             setLevel(currentLevel);
-        }
 
+        }
         return true;
     }
     return false;
 }
 
 function setLevel(level) {
+
+    //xoa animationFrame de hien thi thong tin level
+    cancelAnimationFrame(game.requestId);
+    gameOver = false;
+
+    pauseAllSounds();
+
     lootArray.splice(0, lootArray.length);
 
     brick.brickFinished = true;
 
     pen.drawImage(image, 0, 0);
     currentLevel = level;
+    // hiển thi thong tin level
     initLevel(currentLevel);
     // sounds.nextLevel.play();
+    resetGame();
     resetBall();
     resetBoard();
     resetBricks();
@@ -560,7 +573,7 @@ function setLevel(level) {
     createBricks();
     game.timeoutId = setTimeout(() => {
         loop();
-        sounds.nexLevel.play();
+        sounds.nextLevel.play();
     }, 3000);
 }
 
@@ -584,9 +597,11 @@ function initLevel(level) {
     );
 }
 
-function gameOver() {
+function showGameOver() {
+    let highestScore = getHighestScore();
+
     pen.font = "50px Verdana";
-    pen.fillStyle = "#f5a29a";
+    pen.fillStyle = "#bf1b54";
     pen.fillText("GAME OVER", canvas.width / 2 - 125, canvas.height / 2);
     pen.font = "20px Verdana";
     pen.fillText(
@@ -594,6 +609,19 @@ function gameOver() {
         canvas.width / 2 - 125,
         canvas.height / 2 + 60
     );
+    if (highestScore === 0) {
+        pen.fillText(
+            `ZERO POINTS !? you still a nobby`,
+            canvas.width / 2 - 125,
+            canvas.height / 2 + 120
+        );
+    } else {
+        pen.fillText(
+            `Highest score = ${highestScore} `,
+            canvas.width / 2 - 125,
+            canvas.height / 2 + 120
+        );
+    }
 }
 
 // loop();
@@ -606,11 +634,14 @@ function play() {
 
     sounds.gameStart.play();
 
+
+    initLevel(currentLevel);
     resetGame();
     resetBall();
     resetBoard();
     createBricks();
     loop();
+
 }
 
 document.addEventListener("keydown", clickHandler);
@@ -661,14 +692,39 @@ function pauseAllSounds() {
     sounds.onLoadSound.currentTime = 0;
     sounds.onLoadSound.pause();
 }
+function updateLocalStorageScore(newScore) {
+    let highestScore;
+    if (localStorage.getItem("highestScore") === null) {
+        highestScore = 0;
+    } else {
+        highestScore = JSON.parse(localStorage.getItem("highestScore"));
+    }
+    //ktra newScore có lớn hơn ko
+    if (newScore > highestScore) {
+        highestScore = newScore;
+    }
+    localStorage.setItem("highestScore", JSON.stringify(highestScore));
+}
+function getHighestScore() {
+    let currentHighestScore;
 
-
+    //if no highestScore yet
+    if (localStorage.getItem("highestScore") === null) {
+        // init highestScore,
+        currentHighestScore = 0;
+    } else {
+        //get the old score to increment on
+        currentHighestScore = JSON.parse(localStorage.getItem("highestScore"));
+    }
+    return currentHighestScore;
+}
 // test
 const btnNextLvl = document.querySelector('#choose-level');
 const lvlInput = document.querySelector('#level-input');
 btnNextLvl.addEventListener('click', () => {
+
     let level = parseInt(lvlInput.value);
     setLevel(level);
-    console.log('current level: ',  currentLevel);
+    console.log('current level: ', currentLevel);
     console.log('speed: ', game.speed);
 })

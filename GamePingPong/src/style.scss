@@ -1,3 +1,4 @@
+//21130488 - Lại Thị Bich Phượng
 body{
     box-sizing: border-box;
     margin: 0;
@@ -26,6 +27,11 @@ body{
       }
       #play-button {
         @extend #pause-button;
+      }
+      #level-input {
+        @extend  #pause-button;
+        margin: 0 10px;
+        color: #fff;
       }
       #choose-level {
         @extend  #pause-button;

@@ -20,11 +20,15 @@ body .btn.btn button {
   margin-left: 5px;
   width: 150px;
 }
-body .btn #pause-button, body .btn #choose-level, body .btn #play-button {
+body .btn #pause-button, body .btn #choose-level, body .btn #level-input, body .btn #play-button {
   background-color: #deabed;
   padding: 0.5rem 1rem;
   cursor: pointer;
   font-size: 1.3rem;
+  color: #fff;
+}
+body .btn #level-input {
+  margin: 0 10px;
   color: #fff;
 }
 

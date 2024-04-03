@@ -561,6 +561,7 @@ function paint() {
     }
 
     function initNextLevel() {
+
         game.level++;
         game.speed++;
 
