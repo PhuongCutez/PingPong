@@ -1,7 +1,7 @@
 //21130488 - Lại Thị Bich Phượng
 const levels = {
     '1': {
-        'speed': 10,
+        'speed': 5,
         'unDefeatBrick': 0,
         'mineRate': 0,
     },
@@ -46,7 +46,7 @@ const heartImage = new Image();
 heartImage.src = "images/hearts.png";
 const boardImage = new Image();
 boardImage.src = "images/board.png";
-const mineImage = new Image()
+const mineImage = new Image();
 mineImage.src = "images/mine.png";
 //kich thuoc board
 let boardWidth = 90;
@@ -76,11 +76,12 @@ let game = {
     timeoutId: null,
     paused: false,
 
-    startPrizeScore: 10,
+    startPrizeScore: 50,
     startPrizeSwitch: "false",
     incrementPrizeSwitch: "false",
     prizeIncr: 50,
 };
+
 const radiusBall = 10;
 
 const board = {
@@ -135,8 +136,8 @@ function resetGame() {
     game.level = currentLevel;
     game.paused = false;
     pause.innerText = "Pause";
-    game.startPrizeSwitch = "false";
-    game.incrementPrizeSwitch = "false";
+    game.startPrizeSwitch = false;
+    game.incrementPrizeSwitch = false;
     game.prizeIncr = 10;
     gameOver = false;
 }
@@ -173,7 +174,7 @@ function createBricks() {
     // so gach khong the pha vo da tao
     let createdUnDefeatBricks = 0;
 
-    while (createdUnDefeatBricks <= unDefeatBricks) {
+    while (createdUnDefeatBricks < unDefeatBricks) {
         // vi tri cua gach khong the pha huy la ngau nhien
         let c = Math.floor(Math.random() * brick.column);
         let r = Math.floor(Math.random() * brick.row);
@@ -266,7 +267,7 @@ function ballBoard() {
         ball.x + ball.radius >= board.x &&
         ball.x - ball.radius <= board.x + board.width
     ) {
-        let collisionPoint = ball.x - (board.x + board.width / 2); //điểm va chạm
+        let collisionPoint = ball.x - (board.x + board.width / 2); // điểm va chạm
         collisionPoint = collisionPoint / (board.width / 2); // giá trị (-1 0 1)
         let angle = (collisionPoint * Math.PI) / 3; // góc va chạm
 
@@ -300,7 +301,7 @@ function randomPrize() {
         prizeOptions.push("mine");
         let mineRate = levels[`${game.level}`].mineRate;
 
-        prizeIndex = Math.floor(Math.random() * prizeOptions.length + mineRate) > 3 ? 2.99 : Math.floor(Math.random() * prizeOptions.length + mineRate);
+        prizeIndex = Math.floor(Math.random() * prizeOptions.length + mineRate) >= 3 ? 2.9 : Math.floor(Math.random() * prizeOptions.length + mineRate);
 
         randomPrize =
             prizeOptions[prizeIndex];
@@ -328,9 +329,10 @@ function randomPrize() {
 function drawLoot() {
     lootArray.forEach((obj) => {
         if (obj.prize === "heart") {
-            pen.drawImage(heartImage, obj.imageX, obj.imageY, 20, 20);
+            pen.drawImage(heartImage, obj.imageX, obj.imageY, 30, 30);
+            return;
         }
-        if (obj.prize == "mine") {
+        if (obj.prize === "mine") {
             pen.drawImage(mineImage, obj.imageX, obj.imageY, 30, 30);
         } else {
             pen.drawImage(boardImage, obj.imageX, obj.imageY, 50, 50);
@@ -350,18 +352,14 @@ function moveLoot() {
     });
 }
 
-//kiem tra dieu kien co du de nhan thuong khong
+// kiem tra dieu kien co du de nhan thuong khong
 function incrementTrackerSwitch() {
     if (game.score === game.startPrizeScore) {
         return true;
-    } else if ((game.score - game.startPrizeScore) % game.prizeIncr === 0) {
-        return true;
-    } else {
-        return false;
-    }
+    } else return (game.score - game.startPrizeScore) % game.prizeIncr === 0;
 }
 
-//xử lý va chạm giữa bóng và cách viên gach
+// xử lý va chạm giữa bóng và cách viên gach
 function ballBrickCollision() {
     //in update
     for (let r = 0; r < brick.row; r++) {
@@ -385,9 +383,9 @@ function ballBrickCollision() {
                         //khi bắt đầu nhận thưởng
                         if (
                             game.score === game.startPrizeScore &&
-                            game.startPrizeSwitch === "false"
+                            game.startPrizeSwitch === false
                         ) {
-                            game.startPrizeSwitch = "true"; // bật phần thưởng
+                            game.startPrizeSwitch = true; // bật phần thưởng
                         }
                     }
                     // sounds
@@ -400,11 +398,11 @@ function ballBrickCollision() {
                     //kiểm tra startPrizeSwitch
 
                     if (b.status != 3) {
-                        if (game.startPrizeSwitch === "true") {
+                        if (game.startPrizeSwitch === true) {
                             let incrementTracker = incrementTrackerSwitch();
 
                             if (incrementTracker) {
-                                game.incrementPrizeSwitch = "true";
+                                game.incrementPrizeSwitch = true;
                                 //1)tạo phần thưởng mới
                                 let imageLoot = {};
                                 imageLoot.prize = randomPrize();
@@ -412,8 +410,8 @@ function ballBrickCollision() {
                                 imageLoot.imageX = b.x;
                                 imageLoot.imageY = b.y;
                                 lootArray.push(imageLoot);
-                            } else if (!incrementTracker) {
-                                game.incrementPrizeSwitch = "false";
+                            } else {
+                                game.incrementPrizeSwitch = false;
                                 console.log("no prize");
                             }
                         }
@@ -424,22 +422,22 @@ function ballBrickCollision() {
     }
 }
 
-//thuong
+// thuong
 function lootBoard() {
     lootArray.forEach((obj) => {
-        if (obj.imageY == board.y) {
+        if (obj.imageY === board.y && (obj.imageX >= board.x && obj.imageX <= (board.x + board.width))) {
             if (obj.prize === "heart") {
                 increaseHearts();
                 lootArray.splice(lootArray.indexOf(obj), 1);
+                return;
             }
             if (obj.prize === "board") {
                 increaseBoardWidth();
                 lootArray.splice(lootArray.indexOf(obj), 1);
             } else {
-                // decreaseHearts();
-                // lootArray.splice(lootArray.indexOf(obj), 1);
+                decreaseHearts();
+                lootArray.splice(lootArray.indexOf(obj), 1);
             }
-
         }
     });
 }
@@ -500,11 +498,13 @@ function loop() {
         ballWall();
         ballBoard();
         // ballBrick();
-        ballBrickCollision();
         lootBoard();
-        if (game.startPrizeSwitch) {
-            moveLoot();
-        }
+        // if (game.startPrizeSwitch) {
+        moveLoot();
+
+        // }
+
+        ballBrickCollision();
 
         //kiểm tra xem cấp độ hoặc trò chơi đã kết thúc chưa, sau đó thoát khỏi animate()
         if (isLevelCompleted() || isGameOver()) return;
@@ -519,10 +519,10 @@ function paint() {
     drawBricks();
     drawScore();
     drawLives();
-    if (game.incrementPrizeSwitch === "true") {
-        drawLoot();
-        moveLoot();
-    }
+    // if (game.incrementPrizeSwitch === true) {
+    moveLoot();
+    drawLoot();
+    // }
 }
 
 function drawScore() {
@@ -535,6 +535,8 @@ function drawScore() {
 
 function drawLives() {
     if (game.hearts > 3) {
+        console.log("heart > 3")
+        console.log("draw lives game hearts: ", game.hearts);
         pen.font = "30px ArcadeClassic";
         pen.fillStyle = "rgb(59, 99, 230)";
         pen.fillText(`${game.hearts}`, canvas.width - 140, 25);
@@ -576,7 +578,7 @@ function checkFinished() {
     for (let r = 0; r < brick.row; r++) {
         for (let c = 0; c < brick.column; c++) {
             let b = bricks[r][c];
-            if (b.status != 0 && b.status != 3) {
+            if (b.status !== 0 && b.status !== 3) {
                 levelFinished = false;
                 return levelFinished;
             }
@@ -685,14 +687,12 @@ function play() {
 
     sounds.gameStart.play();
 
-
     initLevel(currentLevel);
     resetGame();
     resetBall();
     resetBoard();
     createBricks();
     loop();
-
 }
 
 document.addEventListener("keydown", clickHandler);
@@ -701,20 +701,6 @@ function clickHandler(e) {
     if (e.key === "s") {
         play();
     }
-}
-
-function updateLocalStorageScore(newScore) {
-    let highestScore;
-    if (localStorage.getItem("highestScore") === null) {
-        highestScore = 0;
-    } else {
-        highestScore = JSON.parse(localStorage.getItem("highestScore"));
-    }
-    //ktra newScore có lớn hơn ko
-    if (newScore > highestScore) {
-        highestScore = newScore;
-    }
-    localStorage.setItem("highestScore", JSON.stringify(highestScore));
 }
 
 // dừng âm thanh
