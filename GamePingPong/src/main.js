@@ -1,29 +1,39 @@
 //21130488 - Lại Thị Bich Phượng
 const levels = {
     '1': {
-        'speed': 5,
+        'speed': 8,
         'unDefeatBrick': 0,
         'mineRate': 0,
+        'torch': 0,
+        'row': 2
     },
     '2': {
         'speed': 11,
-        'unDefeatBrick': 3,
+        'unDefeatBrick': 20,
         'mineRate': 0,
+        'torch': 0,
+        'row': 3
     },
     '3': {
         'speed': 6,
-        'unDefeatBrick': 4,
+        'unDefeatBrick': 15,
         'mineRate': 0.25,
+        'torch': 0,
+        'row': 4
     },
     '4': {
-        'speed': 13,
+        'speed': 9,
         'unDefeatBrick': 5,
         'mineRate': 0.3,
+        'torch': 3,
+        'row': 4
     },
     '5': {
         'speed': 14,
         'unDefeatBrick': 5,
         'mineRate': 0.4,
+        'torch': 5,
+        'row': 5
     }
 }
 
@@ -48,10 +58,14 @@ const boardImage = new Image();
 boardImage.src = "images/board.png";
 const mineImage = new Image();
 mineImage.src = "images/mine.png";
+const torchImage = new Image();
+torchImage.src = "images/torch.png"
 //kich thuoc board
 let boardWidth = 90;
 const boardHeight = 15;
 const boardMarginBottom = 30;
+let rightPressed = false;
+let leftPressed = false;
 //âm thanh
 const sounds = {
     ballHitBrick: new Audio("sounds/brick.mp3"),
@@ -62,8 +76,10 @@ const sounds = {
     brickCrack: new Audio("sounds/brick_hit.mp3"),
     pauseGameSound: new Audio("sounds/pause.mp3"),
     onLoadSound: new Audio("sounds/game_start.mp3"),
+    brokenBallSound: new Audio("sounds/broken-ball.mp3")
 };
-canvas.addEventListener("mousemove", mouseHandler);
+document.addEventListener("mousemove", mouseHandler);
+
 addEventListener("DOMContentLoaded", onLoadPage);
 pause.addEventListener("click", pauseGame);
 let game = {
@@ -91,10 +107,10 @@ const board = {
     height: boardHeight,
 };
 let brick = {
-    row: 4,
+    row: 5,
     column: 9,
-    brickFinished: false,
-    brickHits: 0, //Số lượng va chạm tối đa có thể chịu được cho mỗi viên gạch
+    // brickFinished: false,
+    // brickHits: 0, //Số lượng va chạm tối đa có thể chịu được cho mỗi viên gạch
     width: 60,
     height: 20,
     offsetLeft: 30,
@@ -143,8 +159,8 @@ function resetGame() {
 }
 
 function resetBricks() {
-    brick.brickFinished = false;
-    brick.brickHits = 0;
+    // brick.brickFinished = false;
+    // brick.brickHits = 0;
 }
 
 let bricks = [];
@@ -174,7 +190,7 @@ function createBricks() {
     // so gach khong the pha vo da tao
     let createdUnDefeatBricks = 0;
 
-    while (createdUnDefeatBricks < unDefeatBricks) {
+    while (unDefeatBricks > 0 && createdUnDefeatBricks <= unDefeatBricks) {
         // vi tri cua gach khong the pha huy la ngau nhien
         let c = Math.floor(Math.random() * brick.column);
         let r = Math.floor(Math.random() * brick.row);
@@ -190,8 +206,35 @@ function createBricks() {
         // tang so luong gach khong the pha huy da tao
         createdUnDefeatBricks++;
     }
-}
 
+
+    // tao duoc
+    let torches = levels[`${game.level}`].torch;
+
+    let createdTorches = 0;
+
+    while (torches > 0 && createdTorches <= torches) {
+        // vi tri cua gach khong the pha huy la ngau nhien
+        let c = Math.floor(Math.random() * brick.column);
+        let r = Math.floor(Math.random() * brick.row);
+
+        // lo random vao cac o gach thi bo qua
+        if (bricks[r][c].status === 3) continue;
+
+        bricks[r][c] = {
+            x: c * (brick.offsetLeft + brick.width) + brick.offsetLeft,
+            y: r * (brick.offsetTop + brick.height) +
+                brick.offsetTop +
+                brick.marginTop,
+            status: 4,
+        };
+
+        // tang so luong duoc
+        createdTorches++;
+    }
+
+}
+//ve cac loai gach
 function drawBricks() {
     for (let r = 0; r < brick.row; r++) {
         for (let c = 0; c < brick.column; c++) {
@@ -208,7 +251,8 @@ function drawBricks() {
             } else if (b.status === 1) {
                 // gạch bị nứt
                 pen.drawImage(CRACKED_IMG, b.x, b.y, brick.width, brick.height);
-            }
+            } else if (b.status === 4) {
+                pen.drawImage(torchImage, b.x, b.y, brick.width, brick.height);           }
         }
     }
 }
@@ -311,9 +355,9 @@ function randomPrize() {
         randomPrize =
             prizeOptions[prizeIndex];
     }
-
-    console.log('random prize: ', randomPrize)
-    console.log('prize options: ', prizeOptions)
+    //
+    // console.log('random prize: ', randomPrize)
+    // console.log('prize options: ', prizeOptions)
 
     return randomPrize;
     //
@@ -361,7 +405,6 @@ function incrementTrackerSwitch() {
 
 // xử lý va chạm giữa bóng và cách viên gach
 function ballBrickCollision() {
-    //in update
     for (let r = 0; r < brick.row; r++) {
         for (let c = 0; c < brick.column; c++) {
             let b = bricks[r][c];
@@ -372,11 +415,11 @@ function ballBrickCollision() {
                     ball.y + ball.radius >= b.y &&
                     ball.y - ball.radius <= b.y + brick.height
                 ) {
-                    // nếu gạch và bóng chạm nhau
+                    // bong se duy chuyen nguoc lai
                     ball.dy = -ball.dy;
                     if (b.status <= 2) {
                         b.status--;
-                        brick.brickHits++;
+                        // brick.brickHits++;
                         game.score += game.scoreGain;
                         updateLocalStorageScore(game.score);
 
@@ -388,6 +431,7 @@ function ballBrickCollision() {
                             game.startPrizeSwitch = true; // bật phần thưởng
                         }
                     }
+
                     // sounds
                     if (b.status === 0) {
                         sounds.brickCrack.play();
@@ -396,8 +440,7 @@ function ballBrickCollision() {
                     }
 
                     //kiểm tra startPrizeSwitch
-
-                    if (b.status != 3) {
+                    if (b.status !== 3) {
                         if (game.startPrizeSwitch === true) {
                             let incrementTracker = incrementTrackerSwitch();
 
@@ -415,6 +458,17 @@ function ballBrickCollision() {
                                 console.log("no prize");
                             }
                         }
+                    }
+
+                    if (b.status === 4) {
+                        game.hearts--;
+                        sounds.brokenBallSound.play();
+                        b.status = 0;
+                        setTimeout(() => {
+                            resetBoard();
+                            resetBall();
+                        }, 2000)
+
                     }
                 }
             }
@@ -489,6 +543,39 @@ function mouseHandler(e) {
         board.x = mouseMovement - board.width / 2;
     }
 }
+document.addEventListener("keydown", keyDownHandler, false);
+document.addEventListener("keyup", keyUpHandler, false);
+//dung nut trai phai de di chuyen tro choi
+// khi nhan phim
+function keyDownHandler(e) {
+    if (e.key === "Right" || e.key === "ArrowRight") {
+        rightPressed = true;
+    } else if (e.key === "Left" || e.key === "ArrowLeft") {
+        leftPressed = true;
+    }
+
+}
+//khi tha phim
+function keyUpHandler(e) {
+    if (e.key === "Right" || e.key === "ArrowRight") {
+        rightPressed = false;
+    } else if (e.key === "Left" || e.key === "ArrowLeft") {
+        leftPressed = false;
+    }
+}
+//toc do di chuyen
+if (rightPressed) {
+    board.x += 15;
+} else if (leftPressed) {
+    board.x -= 15;
+}
+function moveBoard (){
+    if (rightPressed) {
+        board.x = Math.min(board.x + 15, canvas.width - boardWidth);
+    } else if (leftPressed) {
+        board.x = Math.max(board.x - 15, 0);
+    }
+}
 
 function loop() {
     clearTimeout(game.timeoutId);
@@ -501,6 +588,7 @@ function loop() {
         lootBoard();
         // if (game.startPrizeSwitch) {
         moveLoot();
+        moveBoard();
 
         // }
 
@@ -611,7 +699,7 @@ function setLevel(level) {
 
     lootArray.splice(0, lootArray.length);
 
-    brick.brickFinished = true;
+    // brick.brickFinished = true;
 
     pen.drawImage(image, 0, 0);
     currentLevel = level;
@@ -621,7 +709,7 @@ function setLevel(level) {
     resetGame();
     resetBall();
     resetBoard();
-    resetBricks();
+    // resetBricks();
 
     createBricks();
     game.timeoutId = setTimeout(() => {
@@ -636,6 +724,7 @@ function setLevel(level) {
 function initLevel(level) {
     game.level = level;
     game.speed = levels[`${level}`].speed;
+    brick.row = levels[`${level}`].row;
 
     // game.level++;
     // game.speed++;
@@ -679,7 +768,8 @@ function showGameOver() {
 
 // loop();
 function play() {
-    document.removeEventListener("keydown", clickHandler);
+    // document.removeEventListener("keydown", clickHandler);
+
     pauseAllSounds();
     sounds.onLoadSound.play();
     clearTimeout(game.timeoutId);
@@ -696,12 +786,13 @@ function play() {
 }
 
 document.addEventListener("keydown", clickHandler);
-
+// click s --> bat dau choi
 function clickHandler(e) {
     if (e.key === "s") {
         play();
     }
 }
+
 
 // dừng âm thanh
 function pauseAllSounds() {
@@ -758,7 +849,7 @@ function getHighestScore() {
     return currentHighestScore;
 }
 
-// test
+// chon level
 const btnNextLvl = document.querySelector('#choose-level');
 const lvlInput = document.querySelector('#level-input');
 btnNextLvl.addEventListener('click', () => {
