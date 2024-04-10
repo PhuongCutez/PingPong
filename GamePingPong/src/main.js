@@ -8,21 +8,21 @@ const levels = {
         'row': 2
     },
     '2': {
-        'speed': 11,
-        'unDefeatBrick': 20,
+        'speed': 8,
+        'unDefeatBrick': 10,
         'mineRate': 0,
         'torch': 0,
         'row': 3
     },
     '3': {
-        'speed': 6,
+        'speed': 8,
         'unDefeatBrick': 15,
         'mineRate': 0.25,
         'torch': 0,
         'row': 4
     },
     '4': {
-        'speed': 9,
+        'speed': 7,
         'unDefeatBrick': 5,
         'mineRate': 0.3,
         'torch': 3,
@@ -34,12 +34,20 @@ const levels = {
         'mineRate': 0.4,
         'torch': 5,
         'row': 5
+    },
+    '6': {
+        'speed': 8,
+        'unDefeatBrick': 5,
+        'mineRate': 0.4,
+        'torch': 5,
+        'row': 5
     }
 }
 
 let currentLevel = 1;
 let gameOver = false;
 let gameComplete = false;
+let startGameTime = 0;
 
 const canvas = document.getElementById("canvas");
 const pen = canvas.getContext("2d");
@@ -59,7 +67,9 @@ boardImage.src = "images/board.png";
 const mineImage = new Image();
 mineImage.src = "images/mine.png";
 const torchImage = new Image();
-torchImage.src = "images/torch.png"
+torchImage.src = "images/torch.png";
+const electricImage = new Image();
+electricImage.src = "images/electric.png";
 //kich thuoc board
 let boardWidth = 90;
 const boardHeight = 15;
@@ -84,18 +94,18 @@ addEventListener("DOMContentLoaded", onLoadPage);
 pause.addEventListener("click", pauseGame);
 let game = {
     requestId: null,
-    hearts: 3,
+    hearts: 1000,
     speed: 10,
     score: 0,
     scoreGain: 5,
     level: 1,
     timeoutId: null,
     paused: false,
-
     startPrizeScore: 50,
     startPrizeSwitch: "false",
     incrementPrizeSwitch: "false",
     prizeIncr: 50,
+    electricTimeout: null
 };
 
 const radiusBall = 10;
@@ -109,8 +119,6 @@ const board = {
 let brick = {
     row: 5,
     column: 9,
-    // brickFinished: false,
-    // brickHits: 0, //Số lượng va chạm tối đa có thể chịu được cho mỗi viên gạch
     width: 60,
     height: 20,
     offsetLeft: 30,
@@ -156,11 +164,7 @@ function resetGame() {
     game.incrementPrizeSwitch = false;
     game.prizeIncr = 10;
     gameOver = false;
-}
-
-function resetBricks() {
-    // brick.brickFinished = false;
-    // brick.brickHits = 0;
+    game.electricTimeout = null;
 }
 
 let bricks = [];
@@ -169,7 +173,6 @@ let bricks = [];
 // status = 2: gạch có thể phá vỡ
 // status = 3: gạch ko thể phá vỡ
 function createBricks() {
-
     // tao tat ca cach gach la gach so 2
     for (let r = 0; r < brick.row; r++) {
         bricks[r] = [];
@@ -183,10 +186,8 @@ function createBricks() {
             };
         }
     }
-
     // tao gach khong the pha vo
     let unDefeatBricks = levels[`${game.level}`].unDefeatBrick;
-
     // so gach khong the pha vo da tao
     let createdUnDefeatBricks = 0;
 
@@ -206,8 +207,6 @@ function createBricks() {
         // tang so luong gach khong the pha huy da tao
         createdUnDefeatBricks++;
     }
-
-
     // tao duoc
     let torches = levels[`${game.level}`].torch;
 
@@ -234,6 +233,7 @@ function createBricks() {
     }
 
 }
+
 //ve cac loai gach
 function drawBricks() {
     for (let r = 0; r < brick.row; r++) {
@@ -252,7 +252,8 @@ function drawBricks() {
                 // gạch bị nứt
                 pen.drawImage(CRACKED_IMG, b.x, b.y, brick.width, brick.height);
             } else if (b.status === 4) {
-                pen.drawImage(torchImage, b.x, b.y, brick.width, brick.height);           }
+                pen.drawImage(torchImage, b.x, b.y, brick.width, brick.height);
+            }
         }
     }
 }
@@ -535,41 +536,63 @@ function drawBoardLives(x, y) {
 
 function mouseHandler(e) {
     const mouseMovement = e.clientX - canvas.offsetLeft;
+
     const insideCanvas = () =>
         mouseMovement - board.width / 2 > 0 &&
         mouseMovement + board.width / 2 < canvas.width;
 
     if (insideCanvas()) {
-        board.x = mouseMovement - board.width / 2;
+        if (game.level === 5)
+            board.x = canvas.width - mouseMovement - board.width / 2;
+        else
+            board.x = mouseMovement - board.width / 2;
     }
 }
+
 document.addEventListener("keydown", keyDownHandler, false);
 document.addEventListener("keyup", keyUpHandler, false);
 //dung nut trai phai de di chuyen tro choi
 // khi nhan phim
 function keyDownHandler(e) {
     if (e.key === "Right" || e.key === "ArrowRight") {
-        rightPressed = true;
+        if (game.level === 5)
+            leftPressed = true;
+        else
+            rightPressed = true;
+
     } else if (e.key === "Left" || e.key === "ArrowLeft") {
-        leftPressed = true;
+        if (game.level === 5)
+            rightPressed = true;
+        else
+            leftPressed = true;
     }
 
+
 }
+
 //khi tha phim
 function keyUpHandler(e) {
     if (e.key === "Right" || e.key === "ArrowRight") {
-        rightPressed = false;
+        if (game.level === 5)
+            leftPressed = false;
+        else
+            rightPressed = false;
     } else if (e.key === "Left" || e.key === "ArrowLeft") {
-        leftPressed = false;
+        if (game.level === 5)
+            rightPressed = false
+        else
+            leftPressed = false;
     }
 }
+
 //toc do di chuyen
 if (rightPressed) {
     board.x += 15;
 } else if (leftPressed) {
     board.x -= 15;
 }
-function moveBoard (){
+
+function moveBoard() {
     if (rightPressed) {
         board.x = Math.min(board.x + 15, canvas.width - boardWidth);
     } else if (leftPressed) {
@@ -602,6 +625,10 @@ function loop() {
 
 function paint() {
     pen.drawImage(image, 0, 0);
+
+    if (game.level === 6)
+        drawElectric();
+
     drawBoard();
     drawBall();
     drawBricks();
@@ -726,9 +753,6 @@ function initLevel(level) {
     game.speed = levels[`${level}`].speed;
     brick.row = levels[`${level}`].row;
 
-    // game.level++;
-    // game.speed++;
-    // bricks = [];
 // hiển thị thông báo cho cấp độ mới
     pen.font = "50px ArcadeClassic";
     pen.fillStyle = "yellow";
@@ -786,6 +810,7 @@ function play() {
 }
 
 document.addEventListener("keydown", clickHandler);
+
 // click s --> bat dau choi
 function clickHandler(e) {
     if (e.key === "s") {
@@ -847,6 +872,18 @@ function getHighestScore() {
         currentHighestScore = JSON.parse(localStorage.getItem("highestScore"));
     }
     return currentHighestScore;
+}
+
+function drawElectric() {
+    const currentTime = Date.now();
+
+    if (currentTime - startGameTime >= 5000) {
+        pen.drawImage(electricImage, 0, 250, 200, 71);
+        pen.drawImage(electricImage, canvas.width - 200, 250, 200, 71);
+        setTimeout(() => {
+            canvas.clearRect(0, 0, canvas.width, canvas.height)
+        }, 3000)
+    }
 }
 
 // chon level

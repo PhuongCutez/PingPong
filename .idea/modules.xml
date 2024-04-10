@@ -5,7 +5,6 @@
       <module fileurl="file://$PROJECT_DIR$/DataTable/DataTable.iml" filepath="$PROJECT_DIR$/DataTable/DataTable.iml" />
       <module fileurl="file://$PROJECT_DIR$/Game/Game.iml" filepath="$PROJECT_DIR$/Game/Game.iml" />
       <module fileurl="file://$PROJECT_DIR$/GamePingPong/GamePingPong.iml" filepath="$PROJECT_DIR$/GamePingPong/GamePingPong.iml" />
-      <module fileurl="file://$PROJECT_DIR$/GamePingPonng/GamePingPonng.iml" filepath="$PROJECT_DIR$/GamePingPonng/GamePingPonng.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/PingPong.iml" filepath="$PROJECT_DIR$/.idea/PingPong.iml" />
     </modules>
   </component>
