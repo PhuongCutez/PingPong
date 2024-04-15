@@ -1,53 +1,25 @@
-//21130488 - Lại Thị Bich Phượng
+/* 21130488 - Lại Thị Bích Phương*/
 const levels = {
     '1': {
-        'speed': 8,
-        'unDefeatBrick': 0,
-        'mineRate': 0,
-        'torch': 0,
-        'row': 2
-    },
-    '2': {
-        'speed': 8,
-        'unDefeatBrick': 10,
-        'mineRate': 0,
-        'torch': 0,
-        'row': 3
-    },
-    '3': {
-        'speed': 8,
-        'unDefeatBrick': 15,
-        'mineRate': 0.25,
-        'torch': 0,
-        'row': 4
-    },
-    '4': {
-        'speed': 7,
-        'unDefeatBrick': 5,
-        'mineRate': 0.3,
-        'torch': 3,
-        'row': 4
-    },
-    '5': {
-        'speed': 14,
-        'unDefeatBrick': 5,
-        'mineRate': 0.4,
-        'torch': 5,
-        'row': 5
-    },
-    '6': {
-        'speed': 8,
-        'unDefeatBrick': 5,
-        'mineRate': 0.4,
-        'torch': 5,
-        'row': 5
+        'speed': 8, 'unDefeatBrick': 0, 'mineRate': 0, 'torch': 0, 'row': 2
+    }, '2': {
+        'speed': 8, 'unDefeatBrick': 10, 'mineRate': 0, 'torch': 0, 'row': 3
+    }, '3': {
+        'speed': 8, 'unDefeatBrick': 15, 'mineRate': 0.25, 'torch': 0, 'row': 4
+    }, '4': {
+        'speed': 7, 'unDefeatBrick': 5, 'mineRate': 0.3, 'torch': 3, 'row': 4
+    }, '5': {
+        'speed': 14, 'unDefeatBrick': 5, 'mineRate': 0.4, 'torch': 5, 'row': 5
+    }, '6': {
+        'speed': 8, 'unDefeatBrick': 5, 'mineRate': 0.4, 'torch': 5, 'row': 5
     }
 }
 
 let currentLevel = 1;
 let gameOver = false;
-let gameComplete = false;
-let startGameTime = 0;
+let spiderDirection = 1;
+// biến trạng thái để kiểm tra xem trước đó bóng đã va chạm với nhện hay chưa
+let isCollisionWithSpider = false;
 
 const canvas = document.getElementById("canvas");
 const pen = canvas.getContext("2d");
@@ -68,8 +40,10 @@ const mineImage = new Image();
 mineImage.src = "images/mine.png";
 const torchImage = new Image();
 torchImage.src = "images/torch.png";
-const electricImage = new Image();
-electricImage.src = "images/electric.png";
+const spiderImage = new Image();
+spiderImage.src = "images/spider.png";
+
+
 //kich thuoc board
 let boardWidth = 90;
 const boardHeight = 15;
@@ -117,13 +91,7 @@ const board = {
     height: boardHeight,
 };
 let brick = {
-    row: 5,
-    column: 9,
-    width: 60,
-    height: 20,
-    offsetLeft: 30,
-    offsetTop: 20,
-    marginTop: 40,
+    row: 5, column: 9, width: 60, height: 20, offsetLeft: 30, offsetTop: 20, marginTop: 40,
 };
 const ball = {
     x: canvas.width / 2,
@@ -132,6 +100,13 @@ const ball = {
     dx: game.speed * (Math.random() * 2 - 1),
     dy: -game.speed
 };
+
+
+let spiders = [{
+    x: 0, y: 250, speed: 5, width: 70, height: 36
+}, {
+    x: 150, y: 250, speed: 5, width: 70, height: 36
+}]
 
 function onLoadPage(e) {
     pauseAllSounds();
@@ -164,7 +139,7 @@ function resetGame() {
     game.incrementPrizeSwitch = false;
     game.prizeIncr = 10;
     gameOver = false;
-    game.electricTimeout = null;
+    // game.electricTimeout = null;
 }
 
 let bricks = [];
@@ -179,9 +154,7 @@ function createBricks() {
         for (let c = 0; c < brick.column; c++) {
             bricks[r][c] = {
                 x: c * (brick.offsetLeft + brick.width) + brick.offsetLeft,
-                y:
-                    r * (brick.offsetTop + brick.height) +
-                    brick.offsetTop + brick.marginTop,
+                y: r * (brick.offsetTop + brick.height) + brick.offsetTop + brick.marginTop,
                 status: 2,
             };
         }
@@ -198,9 +171,7 @@ function createBricks() {
 
         bricks[r][c] = {
             x: c * (brick.offsetLeft + brick.width) + brick.offsetLeft,
-            y: r * (brick.offsetTop + brick.height) +
-                brick.offsetTop +
-                brick.marginTop,
+            y: r * (brick.offsetTop + brick.height) + brick.offsetTop + brick.marginTop,
             status: 3,
         };
 
@@ -222,9 +193,7 @@ function createBricks() {
 
         bricks[r][c] = {
             x: c * (brick.offsetLeft + brick.width) + brick.offsetLeft,
-            y: r * (brick.offsetTop + brick.height) +
-                brick.offsetTop +
-                brick.marginTop,
+            y: r * (brick.offsetTop + brick.height) + brick.offsetTop + brick.marginTop,
             status: 4,
         };
 
@@ -306,12 +275,7 @@ function ballWall() { //xử lý va chạm bên trên
 
 //ktra va chạm quả bóng với thanh trượt
 function ballBoard() {
-    if (
-        ball.y + ball.radius >= board.y &&
-        ball.y - ball.radius <= board.y + board.height &&
-        ball.x + ball.radius >= board.x &&
-        ball.x - ball.radius <= board.x + board.width
-    ) {
+    if (ball.y + ball.radius >= board.y && ball.y - ball.radius <= board.y + board.height && ball.x + ball.radius >= board.x && ball.x - ball.radius <= board.x + board.width) {
         let collisionPoint = ball.x - (board.x + board.width / 2); // điểm va chạm
         collisionPoint = collisionPoint / (board.width / 2); // giá trị (-1 0 1)
         let angle = (collisionPoint * Math.PI) / 3; // góc va chạm
@@ -328,9 +292,7 @@ function ballBoard() {
 
 // thông tin phần thưởng
 let imageLoot = {
-    imageX: 0,
-    imageY: 0,
-    prize: "",
+    imageX: 0, imageY: 0, prize: "",
 };
 
 //random phần thưởng
@@ -348,13 +310,11 @@ function randomPrize() {
 
         prizeIndex = Math.floor(Math.random() * prizeOptions.length + mineRate) >= 3 ? 2.9 : Math.floor(Math.random() * prizeOptions.length + mineRate);
 
-        randomPrize =
-            prizeOptions[prizeIndex];
+        randomPrize = prizeOptions[prizeIndex];
     } else {
         prizeIndex = Math.floor(Math.random() * prizeOptions.length);
 
-        randomPrize =
-            prizeOptions[prizeIndex];
+        randomPrize = prizeOptions[prizeIndex];
     }
     //
     // console.log('random prize: ', randomPrize)
@@ -410,12 +370,7 @@ function ballBrickCollision() {
         for (let c = 0; c < brick.column; c++) {
             let b = bricks[r][c];
             if (b.status > 0) { // chưa vỡ
-                if (
-                    ball.x + ball.radius >= b.x &&
-                    ball.x - ball.radius <= b.x + brick.width &&
-                    ball.y + ball.radius >= b.y &&
-                    ball.y - ball.radius <= b.y + brick.height
-                ) {
+                if (ball.x + ball.radius >= b.x && ball.x - ball.radius <= b.x + brick.width && ball.y + ball.radius >= b.y && ball.y - ball.radius <= b.y + brick.height) {
                     // bong se duy chuyen nguoc lai
                     ball.dy = -ball.dy;
                     if (b.status <= 2) {
@@ -425,10 +380,7 @@ function ballBrickCollision() {
                         updateLocalStorageScore(game.score);
 
                         //khi bắt đầu nhận thưởng
-                        if (
-                            game.score === game.startPrizeScore &&
-                            game.startPrizeSwitch === false
-                        ) {
+                        if (game.score === game.startPrizeScore && game.startPrizeSwitch === false) {
                             game.startPrizeSwitch = true; // bật phần thưởng
                         }
                     }
@@ -537,15 +489,10 @@ function drawBoardLives(x, y) {
 function mouseHandler(e) {
     const mouseMovement = e.clientX - canvas.offsetLeft;
 
-    const insideCanvas = () =>
-        mouseMovement - board.width / 2 > 0 &&
-        mouseMovement + board.width / 2 < canvas.width;
+    const insideCanvas = () => mouseMovement - board.width / 2 > 0 && mouseMovement + board.width / 2 < canvas.width;
 
     if (insideCanvas()) {
-        if (game.level === 5)
-            board.x = canvas.width - mouseMovement - board.width / 2;
-        else
-            board.x = mouseMovement - board.width / 2;
+        if (game.level === 5) board.x = canvas.width - mouseMovement - board.width / 2; else board.x = mouseMovement - board.width / 2;
     }
 }
 
@@ -555,16 +502,10 @@ document.addEventListener("keyup", keyUpHandler, false);
 // khi nhan phim
 function keyDownHandler(e) {
     if (e.key === "Right" || e.key === "ArrowRight") {
-        if (game.level === 5)
-            leftPressed = true;
-        else
-            rightPressed = true;
+        if (game.level === 5) leftPressed = true; else rightPressed = true;
 
     } else if (e.key === "Left" || e.key === "ArrowLeft") {
-        if (game.level === 5)
-            rightPressed = true;
-        else
-            leftPressed = true;
+        if (game.level === 5) rightPressed = true; else leftPressed = true;
     }
 
 
@@ -573,15 +514,10 @@ function keyDownHandler(e) {
 //khi tha phim
 function keyUpHandler(e) {
     if (e.key === "Right" || e.key === "ArrowRight") {
-        if (game.level === 5)
-            leftPressed = false;
-        else
-            rightPressed = false;
+        if (game.level === 5) leftPressed = false; else rightPressed = false;
     } else if (e.key === "Left" || e.key === "ArrowLeft") {
-        if (game.level === 5)
-            rightPressed = false
-        else
-            leftPressed = false;
+        if (game.level === 5) rightPressed = false
+        else leftPressed = false;
     }
 }
 
@@ -607,15 +543,12 @@ function loop() {
         moveBall();
         ballWall();
         ballBoard();
-        // ballBrick();
         lootBoard();
-        // if (game.startPrizeSwitch) {
         moveLoot();
         moveBoard();
 
-        // }
-
         ballBrickCollision();
+        if (game.level === 6) collisionWithSpider();
 
         //kiểm tra xem cấp độ hoặc trò chơi đã kết thúc chưa, sau đó thoát khỏi animate()
         if (isLevelCompleted() || isGameOver()) return;
@@ -626,18 +559,16 @@ function loop() {
 function paint() {
     pen.drawImage(image, 0, 0);
 
-    if (game.level === 6)
-        drawElectric();
+    if (game.level === 6) drawSpider();
 
     drawBoard();
     drawBall();
     drawBricks();
     drawScore();
     drawLives();
-    // if (game.incrementPrizeSwitch === true) {
+
     moveLoot();
     drawLoot();
-    // }
 }
 
 function drawScore() {
@@ -681,8 +612,7 @@ function isGameOver() {
         drawLives();
         gameOver = true;
     }
-    if (gameOver)
-        showGameOver();
+    if (gameOver) showGameOver();
     return gameOver;
 
 }
@@ -756,11 +686,7 @@ function initLevel(level) {
 // hiển thị thông báo cho cấp độ mới
     pen.font = "50px ArcadeClassic";
     pen.fillStyle = "yellow";
-    pen.fillText(
-        `LEVEL ${game.level}!`,
-        canvas.width / 2 - 80,
-        canvas.height / 2
-    );
+    pen.fillText(`LEVEL ${game.level}!`, canvas.width / 2 - 80, canvas.height / 2);
 }
 
 function showGameOver() {
@@ -770,23 +696,11 @@ function showGameOver() {
     pen.fillStyle = "#bf1b54";
     pen.fillText("GAME OVER", canvas.width / 2 - 125, canvas.height / 2);
     pen.font = "20px Verdana";
-    pen.fillText(
-        `Your score ${game.score}`,
-        canvas.width / 2 - 125,
-        canvas.height / 2 + 60
-    );
+    pen.fillText(`Your score ${game.score}`, canvas.width / 2 - 125, canvas.height / 2 + 60);
     if (highestScore === 0) {
-        pen.fillText(
-            `ZERO POINTS !? you still a nobby`,
-            canvas.width / 2 - 125,
-            canvas.height / 2 + 120
-        );
+        pen.fillText(`ZERO POINTS !? you still a nobby`, canvas.width / 2 - 125, canvas.height / 2 + 120);
     } else {
-        pen.fillText(
-            `Highest score = ${highestScore} `,
-            canvas.width / 2 - 125,
-            canvas.height / 2 + 120
-        );
+        pen.fillText(`Highest score = ${highestScore} `, canvas.width / 2 - 125, canvas.height / 2 + 120);
     }
 }
 
@@ -874,16 +788,56 @@ function getHighestScore() {
     return currentHighestScore;
 }
 
-function drawElectric() {
-    const currentTime = Date.now();
+function drawSpider() {
+    spiders.forEach(spider => {
+        // Change direction if spider hits the edge
+        if (spider.x === 0) {
+            spiderDirection = 1;
+        } else if (spider.x + spider.width === canvas.width) {
+            spiderDirection = -1;
+        }
+        spider.x += spider.speed * spiderDirection;
+        pen.drawImage(spiderImage, spider.x, spider.y, spider.width, spider.height);
+    });
+}
 
-    if (currentTime - startGameTime >= 5000) {
-        pen.drawImage(electricImage, 0, 250, 200, 71);
-        pen.drawImage(electricImage, canvas.width - 200, 250, 200, 71);
-        setTimeout(() => {
-            canvas.clearRect(0, 0, canvas.width, canvas.height)
-        }, 3000)
+/**
+ * Kiểm tra va chạm giữa bóng và nhện
+ */
+function collisionWithSpider() {
+    // nếu mà trước đó, bóng chưa va chạm với nhện
+    // thì kiểm tra hiện tại xem bóng có va chạm với nhện không 
+    // cần phải đặt điều kiện này tại vì hàm loop() sẽ gọi lại hàm collisionWithSpider() liên tục 
+    // vì loop() là một hàm callback của requestAnimationFrame()
+    // nếu không đặt điều kiện này thì sẽ gây ra việc bóng bị trừ mạng liên tục
+    // biến trạng thái isCollisionWithSpider sẽ được đặt là false sau khi đặt lại thanh hứng và bóng để đảm bảo mỗi lần va chạm chỉ trừ 1 mạng
+    if (!isCollisionWithSpider) {
+        console.log('test !isCollisionWithSpider', !isCollisionWithSpider)
+        // lặp qua từng con nhện xem bóng có va chạm với nhện nào không
+        for (let spider of spiders) {
+            if (ball.x >= spider.x && ball.x <= spider.x + spider.width && ball.y >= spider.y && ball.y <= spider.y + spider.height) {
+                // nếu hiện tại có va chạm với nhện thì set biến trạng thái isCollisionWithSpider = true
+                isCollisionWithSpider = true;
+            }
+
+            // nếu mà hiện tại có va chạm thì sẽ trừ mạng đi 1
+            // sau đó tiến hành đặt lại board (thanh hứng) và đặt lại bóng
+            if (isCollisionWithSpider) {
+                game.hearts--;
+                console.log('test')
+
+                sounds.brokenBallSound.play();
+                resetBoard();
+                resetBall();
+                // cần set biến trạng thái về false sau khi đã đặt lại bóng và thanh hứng
+                // vì nếu không set về false thì sẽ không thể kiểm tra xem bóng đã va chạm với nhện hay chưa
+                isCollisionWithSpider = false;
+                break;
+            }
+
+        }
     }
+
 }
 
 // chon level
