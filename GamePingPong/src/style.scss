@@ -1,41 +1,141 @@
 //21130488 - Lại Thị Bich Phượng
-body{
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0.3rem;
-    .container{
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      position: relative;
+
+$primaryColor: #bde0fe;
+$secondaryColor: #a2d2ff;
+$tertiaryColor: #7161ef;
+$backgroundColor: #f8edeb;
+$backgroundColorBold: #f9dcc4;
+$warningColor: #ffd670;
+
+@mixin flexCenter($flexDirection) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: $flexDirection;
+}
+
+body {
+  color: $tertiaryColor;
+  position: relative;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0.3rem;
+  height: calc(100vh);
+  background-color: $backgroundColor;
+
+  .container {
+    @include flexCenter(row);
+    //position: relative;
+
+    * {
+      margin: 0 1rem;
     }
-    .btn{
+
+  }
+
+}
+
+.modal {
+  display: none;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  box-sizing: content-box;
+  @include flexCenter(row);
+  backdrop-filter: brightness(0.8);
+
+  &-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 2rem;
+    background-color: $backgroundColor;
+    border-radius: 10px;
+
+    &_header {
       display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-top: 5px;
-      &.btn button{
-        border-radius: 20px;
-        margin-left: 5px;
-        width: 150px;
-      }
-      #pause-button {
-        background-color: #deabed;        padding: 0.5rem 1rem;
-        cursor: pointer;
-        font-size: 1.3rem;
-        color: #fff;
-      }
-      #play-button {
-        @extend #pause-button;
-      }
-      #level-input {
-        @extend  #pause-button;
-        margin: 0 10px;
-        color: #fff;
-      }
-      #choose-level {
-        @extend  #pause-button;
+      justify-content: flex-end;
+    }
+
+    &_body {
+      @include flexCenter(column);
+
+      h2 {
+        margin-bottom: 3rem;
       }
 
+      .button-level_container {
+        @include flexCenter(row);
+
+        * {
+          margin: 0 0.5rem;
+        }
+      }
     }
   }
+}
+
+.btn {
+  padding: 0.5rem;
+  border-radius: 5px;
+  border: none;
+  box-shadow: 5px 5px $tertiaryColor;
+  transition: 0.2s ease-in;
+  color: $tertiaryColor;
+
+  &:hover {
+    transform: translate(5px, 5px);
+    box-shadow: none;
+    transition: 0.2s ease-out;
+  }
+
+  &-primary {
+    background-color: $primaryColor;
+
+    &:hover {
+      background-color: $secondaryColor;
+    }
+  }
+
+  &-warning {
+    background-color: $warningColor;
+    box-shadow: 5px 5px #ff9770;
+  }
+}
+
+.game-btn_container {
+  @include flexCenter(row);
+
+  * {
+    margin: 1rem;
+    font-size: 1.2rem;
+    padding: 1rem;
+    width: 15rem;
+  }
+}
+
+#canvas {
+  border: none !important;
+  border-radius: 10px;
+  box-shadow: 5px 5px $backgroundColorBold;
+}
+
+.box {
+  padding: 1rem;
+  background-color: $backgroundColor;
+  box-shadow: 5px 5px $backgroundColorBold;
+  width: 30%;
+  height: 600px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  border: 3px solid $backgroundColorBold;
+}
+
+.round-box {
+  border-radius: 10px;
+}
+
+

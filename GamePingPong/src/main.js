@@ -14,17 +14,15 @@ const levels = {
         'speed': 8, 'unDefeatBrick': 5, 'mineRate': 0.4, 'torch': 5, 'row': 5
     }
 }
-
+const canvas = document.getElementById("canvas");
+const pen = canvas.getContext("2d");
 let currentLevel = 1;
 let gameOver = false;
 let spiderDirection = 1;
 // biến trạng thái để kiểm tra xem trước đó bóng đã va chạm với nhện hay chưa
 let isCollisionWithSpider = false;
-
-const canvas = document.getElementById("canvas");
-const pen = canvas.getContext("2d");
 // nút tạm ngừng
-const pause = document.getElementById("pause-button");
+const pause = document.getElementById("pause-btn");
 //hinh anh
 const image = new Image();
 image.src = "images/color.jpg";//background
@@ -42,14 +40,6 @@ const torchImage = new Image();
 torchImage.src = "images/torch.png";
 const spiderImage = new Image();
 spiderImage.src = "images/spider.png";
-
-
-//kich thuoc board
-let boardWidth = 90;
-const boardHeight = 15;
-const boardMarginBottom = 30;
-let rightPressed = false;
-let leftPressed = false;
 //âm thanh
 const sounds = {
     ballHitBrick: new Audio("sounds/brick.mp3"),
@@ -62,8 +52,14 @@ const sounds = {
     onLoadSound: new Audio("sounds/game_start.mp3"),
     brokenBallSound: new Audio("sounds/broken-ball.mp3")
 };
-document.addEventListener("mousemove", mouseHandler);
 
+//kich thuoc board
+let boardWidth = 90;
+const boardHeight = 15;
+const boardMarginBottom = 30;
+let rightPressed = false;
+let leftPressed = false;
+document.addEventListener("mousemove", mouseHandler);
 addEventListener("DOMContentLoaded", onLoadPage);
 pause.addEventListener("click", pauseGame);
 let game = {
@@ -100,8 +96,6 @@ const ball = {
     dx: game.speed * (Math.random() * 2 - 1),
     dy: -game.speed
 };
-
-
 let spiders = [{
     x: 0, y: 250, speed: 5, width: 70, height: 36
 }, {
@@ -119,7 +113,7 @@ function onLoadPage(e) {
     pen.fillText("START GAME", canvas.width / 2 - 120, canvas.height / 2);
 }
 
-function pauseGame(e) {
+function pauseGame(e) { //tam dung game
     //thay đổi giá tri
     game.paused = game.paused === false ? true : false;
     pause.innerText = pause.innerText === "Resume" ? "Pause" : "Resume";
@@ -179,12 +173,13 @@ function createBricks() {
         createdUnDefeatBricks++;
     }
     // tao duoc
+    //status = 4
     let torches = levels[`${game.level}`].torch;
 
     let createdTorches = 0;
 
     while (torches > 0 && createdTorches <= torches) {
-        // vi tri cua gach khong the pha huy la ngau nhien
+        // vi tri cua duoc la ngau nhien
         let c = Math.floor(Math.random() * brick.column);
         let r = Math.floor(Math.random() * brick.row);
 
@@ -211,7 +206,7 @@ function drawBricks() {
             if (b.status === 3) {
                 pen.beginPath();
                 pen.fillStyle = "#ebd1d5";
-                pen.lineWidth = "2";
+                // pen.lineWidth = "2";
                 pen.rect(b.x, b.y, brick.width, brick.height);
                 pen.fill();
             } else if (b.status === 2) {
@@ -220,7 +215,7 @@ function drawBricks() {
             } else if (b.status === 1) {
                 // gạch bị nứt
                 pen.drawImage(CRACKED_IMG, b.x, b.y, brick.width, brick.height);
-            } else if (b.status === 4) {
+            } else if (b.status === 4) { //gach la duoc
                 pen.drawImage(torchImage, b.x, b.y, brick.width, brick.height);
             }
         }
@@ -651,7 +646,6 @@ function setLevel(level) {
     //xoa animationFrame de hien thi thong tin level
     cancelAnimationFrame(game.requestId);
     gameOver = false;
-
     pauseAllSounds();
 
     lootArray.splice(0, lootArray.length);
@@ -806,8 +800,8 @@ function drawSpider() {
  */
 function collisionWithSpider() {
     // nếu mà trước đó, bóng chưa va chạm với nhện
-    // thì kiểm tra hiện tại xem bóng có va chạm với nhện không 
-    // cần phải đặt điều kiện này tại vì hàm loop() sẽ gọi lại hàm collisionWithSpider() liên tục 
+    // thì kiểm tra hiện tại xem bóng có va chạm với nhện không
+    // cần phải đặt điều kiện này tại vì hàm loop() sẽ gọi lại hàm collisionWithSpider() liên tục
     // vì loop() là một hàm callback của requestAnimationFrame()
     // nếu không đặt điều kiện này thì sẽ gây ra việc bóng bị trừ mạng liên tục
     // biến trạng thái isCollisionWithSpider sẽ được đặt là false sau khi đặt lại thanh hứng và bóng để đảm bảo mỗi lần va chạm chỉ trừ 1 mạng
@@ -840,13 +834,57 @@ function collisionWithSpider() {
 
 }
 
-// chon level
-const btnNextLvl = document.querySelector('#choose-level');
-const lvlInput = document.querySelector('#level-input');
-btnNextLvl.addEventListener('click', () => {
 
-    let level = parseInt(lvlInput.value);
-    setLevel(level);
-    console.log('current level: ', currentLevel);
-    console.log('speed: ', game.speed);
-})
+$(document).ready(function () {
+
+    function closeLevelModal() {
+        const levelModal = $('#level-modal');
+        levelModal.hide();
+
+        setTimeout(pauseGame, 1000)
+
+    }
+
+    function showLevelModal() {
+        const levelModal = $('#level-modal');
+        levelModal.css('display', 'flex');
+
+        pauseGame();
+    }
+
+
+    function showHideInstructionPane() {
+        const instructionPane = $('#game-instruction_pane');
+        instructionPane.animate({width: 'toggle'})
+    }
+
+    let instructionPaneToggle = $('#show-game-ins-btn');
+    instructionPaneToggle.on('click', function () {
+        showHideInstructionPane();
+        let buttonText = $(this).text();
+
+        if (buttonText === 'Hide Level Instruction')
+            buttonText = 'Show Level Instruction';
+        else if (buttonText === 'Show Level Instruction')
+            buttonText = 'Hide Level Instruction';
+
+        $(this).text(buttonText);
+    });
+
+    let closeLvlModalButton = $('#close-lvl-modal_btn');
+    closeLvlModalButton.on('click', closeLevelModal);
+
+    let showLvlModalButton = $('#choose-level_btn');
+    showLvlModalButton.on('click', showLevelModal);
+
+    const levelButtons = $('.level-btn');
+
+    levelButtons.on('click', function () {
+        let level = parseInt($(this).attr('id'));
+        closeLevelModal();
+
+        setTimeout(() => {
+            setLevel(level);
+        }, 1000);
+    })
+});

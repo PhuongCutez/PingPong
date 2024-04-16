@@ -6,18 +6,41 @@
     <meta charset="UTF-8">
     <title>Ping Pong</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 </head>
 <body>
-        <div class="container">
-            <canvas id="canvas" height="600px" width="850px" style="border: solid 2px black;">
-            </canvas>
+<div class="container">
+    <canvas id="canvas" height="600px" width="850px" style="border: solid 2px black;">
+    </canvas>
+    <div class="box round-box" id="game-instruction_pane">
+
+    </div>
+</div>
+<div class="game-btn_container">
+    <button class="btn btn-primary" id="pause-btn">Pause</button>
+    <button class="btn btn-primary" id="play-btn" onclick="play()">Start</button>
+    <button class="btn btn-primary" id="choose-level_btn">Select level</button>
+    <button class="btn btn-primary" id="show-game-ins-btn">Hide Level Instruction</button>
+</div>
+
+<div class="modal" id="level-modal">
+    <div class="modal-content">
+        <div class="modal-content_header">
+            <button class="btn btn-warning" id="close-lvl-modal_btn">&#x274c;</button>
         </div>
-        <div class="btn">
-            <button id="pause-button">Pause</button>
-            <button id="play-button" onclick="play()">Start</button>
-            <input type="number" id="level-input" min="1" max="6" placeholder="Level">
-            <button id="choose-level">Next level</button>
+        <div class="modal-content_body">
+            <h2>Chon level</h2>
+            <div class="button-level_container">
+                <button class="btn btn-primary level-btn" id="1">Level 1</button>
+                <button class="btn btn-primary level-btn" id="2">Level 2</button>
+                <button class="btn btn-primary level-btn" id="3">Level 3</button>
+                <button class="btn btn-primary level-btn" id="4">Level 4</button>
+                <button class="btn btn-primary level-btn" id="5">Level 5</button>
+                <button class="btn btn-primary level-btn" id="6">Level 6</button>
+            </div>
         </div>
-    <script src="main.js"></script>
+    </div>
+</div>
+<script src="main.js"></script>
 </body>
 </html>
